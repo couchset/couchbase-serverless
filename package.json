@@ -1,0 +1,24 @@
+{
+  "name": "couchbase-serverless",
+  "version": "0.0.1",
+  "description": "Couchbase serverless",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/couchset/couchbase-serverless.git"
+  },
+  "author": "Ceddy Muhoza <sup@ceddy.org>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/couchset/couchbase-serverless/issues"
+  },
+  "homepage": "https://github.com/couchset/couchbase-serverless#readme",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "couchbase": "^4.4.2"
+  }
+}
