@@ -13,6 +13,7 @@ import {
     IndexType,
     ISelectAggType,
     ISelectType,
+    IValuesExpr,
     LogicalWhereExpr,
     SortType,
 } from '../interface/query.types';
@@ -21,6 +22,7 @@ import {
     QueryGroupByParamsException,
     QueryOperatorNotFoundException,
     SelectClauseException,
+    UpsertClauseException,
     WhereClauseException,
 } from '../exceptions';
 import {escapeReservedWords} from '../utils';
@@ -94,6 +96,43 @@ export const selectBuilder = (
             throw exception;
         }
         throw new SelectClauseException();
+    }
+};
+
+
+/**
+ * Build a UPSERT N1QL query from user-specified parameters.
+ * {@link https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/upsert.html#syntax}
+ * @param collection Collection name
+ * @param upsertExpr UPSERT INTO Clause param
+ * @param values VALUES Clause param
+ * @param returnExpr RETURN Clause param
+ *
+
+ * @return N1QL UPSERT Query
+ * */
+export const upsertBuilder = (
+    collection: string,
+    upsertExpr: string,
+    valuesExpr: IValuesExpr[],
+    //TODO: add returnExpr
+): string => {
+    try {
+        let expr = upsertExpr;
+
+        const _collection =
+            collection.indexOf(' ') !== -1
+                ? `\`${collection}`.replace(' ', '` ')
+                : collection.indexOf('`') !== -1
+                ? collection
+                : `\`${collection}\``;
+
+        return `${expr} ${_collection} (KEY, VALUE) 
+         VALUES ${valuesExpr.map((value) => `('${value.key}', ${stringifyValues(value.value)})`).join(',')}
+         RETURNING ${collection}.*;
+        `;
+    } catch (exception) {
+        throw new UpsertClauseException();
     }
 };
 

@@ -243,6 +243,15 @@ export type ISelectType =
     | ISelectAggType
     | ISelectFieldType;
 
+
+/**
+ * VALUES expression
+ * */
+export interface IValuesExpr {
+    key: string;
+    value: unknown;
+}
+
 /**
  * LET expression
  * */
@@ -270,6 +279,8 @@ export interface IConditionExpr {
     groupBy?: IGroupBy[];
     letting?: ILetExpr[];
     having?: LogicalWhereExpr;
+
+    values?: IValuesExpr[];
 }
 
 /**

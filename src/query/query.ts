@@ -1,4 +1,4 @@
-import {BaseQuery} from './base-query';
+import { BaseQuery } from './base-query';
 import {
     IConditionExpr,
     IGroupBy,
@@ -7,6 +7,7 @@ import {
     ILetExpr,
     IndexType,
     ISelectType,
+    IValuesExpr,
     LogicalWhereExpr,
     SortType,
 } from './interface/query.types';
@@ -15,13 +16,25 @@ import {
     IndexParamsUsingGSIExceptions,
     MultipleQueryTypesException,
 } from './exceptions';
-import {buildIndexExpr, selectBuilder} from './helpers';
+import { buildIndexExpr, selectBuilder } from './helpers';
+import { upsertBuilder } from './helpers/builders';
 
 export class QueryBuilder extends BaseQuery {
     /**
      * SELECT Expression.
      */
     private selectExpr?: ISelectType[] | string;
+
+    /**
+     * UPSERT Expression.
+     */
+    private upsertExpr?: string;
+
+    /**
+     * VALUES Expression.
+     */
+    private valuesExpr?: IValuesExpr[];
+
     /**
      * WHERE Expression.
      */
@@ -66,7 +79,7 @@ export class QueryBuilder extends BaseQuery {
     /**
      * Available query types.
      */
-    private queryType?: 'SELECT' | 'INDEX';
+    private queryType?: 'SELECT' | 'INDEX' | 'UPSERT';
     /**
      * INDEX ON Expression.
      */
@@ -136,6 +149,28 @@ export class QueryBuilder extends BaseQuery {
             return this;
         }
         throw new MultipleQueryTypesException('SELECT', this.queryType);
+    }
+
+    /**
+     * Add result selectors to INSERT clause.
+     * @method
+     * @public
+     *
+     * @example
+     * ```ts
+     *   const query = new QueryBuilder({}, 'travel-sample');
+     *   const result = query.insert().build()
+     *   console.log(result)
+     * ```
+     * > INSERT INTO `travel-sample`
+     */
+    upsert(): QueryBuilder {
+        if (this.queryType === undefined || this.queryType === 'UPSERT') {
+            this.queryType = 'UPSERT';
+            this.upsertExpr = 'UPSERT INTO';
+            return this;
+        }
+        throw new MultipleQueryTypesException('UPSERT', this.queryType);
     }
 
     /**
@@ -341,6 +376,25 @@ export class QueryBuilder extends BaseQuery {
     }
 
     /**
+     * Add LET expression to SELECT clause.
+     * @method
+     * @public
+     *
+     * @example
+     * ```ts
+     *   const valuesExpr = [{ key: 'some-id', value: { "property": "value" } }];
+     *   const query = new QueryBuilder({}, 'travel-sample');
+     *   const result = query.upsert().values(valuesExpr).build()
+     *   console.log(result)
+     * ```
+     * > UPSERT INTO `travel-sample (KEY, VALUE) VALUES ("some-id", { "property": "value" })`
+     */
+    values(value: IValuesExpr[]): QueryBuilder {
+        this.valuesExpr = value;
+        return this;
+    }
+
+    /**
      * Add GROUP BY expression to GROUP BY clause.
      * @method
      * @public
@@ -460,6 +514,12 @@ export class QueryBuilder extends BaseQuery {
                 case 'use':
                     !!conditionals[value] && this.useKeys(conditionals[value] as string[]);
                     break;
+                case 'upsert':
+                    this.upsert();
+                    break;
+                case 'values':
+                    !!conditionals[value] && this.values(conditionals[value] as IValuesExpr[]);
+                    break;
             }
         });
     }
@@ -516,6 +576,15 @@ export class QueryBuilder extends BaseQuery {
                         this.plainJoinExpr
                     );
                 }
+            case 'UPSERT':
+                if (this.upsertExpr) {
+                    return upsertBuilder(
+                        this.collection,
+                        this.upsertExpr,
+                        this.valuesExpr
+                    );
+                    // return `UPSERT INTO ${this.collection} ${this.upsertExpr}`;
+                }
         }
         return '';
     }
@@ -535,4 +604,4 @@ export class QueryBuilder extends BaseQuery {
     set collection(value: string) {
         this._collection = value;
     }
-}
+}   

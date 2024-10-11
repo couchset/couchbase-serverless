@@ -13,7 +13,7 @@
   ],
   "scripts": {
     "build": "rm -rf dist && tsc --skipLibCheck",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha src/*test.ts --exit"
   },
   "repository": {
     "type": "git",
@@ -26,7 +26,13 @@
   },
   "homepage": "https://github.com/couchset/couchbase-serverless#readme",
   "devDependencies": {
+    "@types/chai": "^5.0.0",
+    "@types/mocha": "^10.0.9",
+    "chai": "^5.1.1",
     "couchbase": "^4.4.2",
+    "mocha": "^10.7.3",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.1",
     "typescript": "^5.6.3"
   }
 }

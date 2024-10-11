@@ -79,9 +79,22 @@ export class fetchApi {
                 return data;
             }
 
-            // Throw error
-            const data: T = await api.json();
-            return data;
+            switch (api.status) {
+                case 400:
+                    throw new Error("Bad Request");
+                case 401:
+                    throw new Error("Unauthorized");
+                case 403:
+                    throw new Error("Forbidden");
+                case 404:
+                    throw new Error("Not Found");
+                case 405:
+                    throw new Error("Method Not Allowed");
+                case 500:
+                    throw new Error("Internal Server Error");
+                default:
+                    throw new Error("Error fetching data");
+            }
         }
         catch (error) {
             console.log("error api", error);

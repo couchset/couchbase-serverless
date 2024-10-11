@@ -1,4 +1,4 @@
-import type { GetOptions } from "couchbase"
+import type { GetOptions, UpsertOptions } from "couchbase"
 import { fetchApi, ResponseBody } from './api';
 import { Scope } from './scope';
 import { buildSelectArrayExpr, QueryBuilder } from "./query";
@@ -71,17 +71,40 @@ export class Collection {
         return result.results[0];
     }
 
-    // async upsert(key: string, value: any, options?: any): Promise<any> {
-    //     return new Promise((resolve, reject) => {
-    //         super.upsert(key, value, options, (err, res) => {
-    //             if (err) {
-    //                 reject(err);
-    //             } else {
-    //                 resolve(res);
-    //             }
-    //         });
-    //     });
-    // }
+    async upsert(key: string, value: any, options?: UpsertOptions): Promise<any> {
+
+        const scope = this.scope;
+        const client = this.getClient();
+
+        // const { project } = options;
+        // TODO timeout, withExpire, 
+        const valueExpr = [{ key, value }];
+        // const valueExpr = Object.keys(value).map((key) => ({ key: key, value: value[key] }));
+        const query = new QueryBuilder({}, scope.bucket.name);
+        query.upsert().values(valueExpr);
+
+        const statement = query.build();
+
+        console.log("statement", statement);
+
+        const [result, error] = await awaitTo<ResponseBody<any>>(client.call<ResponseBody<any>>({
+            method: 'POST',
+            path: `/query/service`,
+            body: {
+                statement
+            }
+        }));
+
+        if (error) {
+            throw error;
+        }
+
+        if(result.errors) {
+            throw result.errors;
+        }
+
+        return result.results[0];
+    }
 
     // async replace(key: string, value: any, options?: ReplaceOptions, callback?: NodeCallback<MutationResult>): Promise<MutationResult> {
     //     return new Promise((resolve, reject) => {

@@ -5,6 +5,14 @@ export class SelectClauseException extends Error {
     }
 }
 
+export class UpsertClauseException extends Error {
+    constructor() {
+        // todo update message
+        super('The UPSERT clause does not have the proper structure');
+    }
+}
+
+
 export class WhereClauseException extends Error {
     constructor() {
         super('The WHERE clause does not have the proper structure');

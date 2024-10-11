@@ -2,7 +2,12 @@
   "compilerOptions": {
     "allowJs": true,
     "esModuleInterop": true,
-    "lib": ["es2017", "esnext", "dom", "es7"],
+    "lib": [
+      "es2017",
+      "esnext",
+      "dom",
+      "es7"
+    ],
     "declaration": true,
     "module": "commonjs",
     "moduleResolution": "node",
@@ -16,5 +21,7 @@
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true
   },
-  "include": ["./src"]
+  "include": [
+    "./src"
+  ]
 }

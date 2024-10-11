@@ -76,21 +76,3 @@ export class Cluster {
     }
 }
 
-
-(async () => {
-// test
-const cluster = await Cluster.connect('couchbase://localhost', {
-    password: "1234567",
-    username: "admin"
-});
-
-const bucket = cluster.bucket('stq');
-const collection = bucket.defaultCollection();
-
-const result = await collection.get('a8a1c1f9-a6fd-40bf-a091-5a25deb28c0b', 
-    { project: ["id", "userId"] }
-);
-
-console.log("result", result);
-})()
-
