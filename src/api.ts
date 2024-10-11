@@ -1,6 +1,6 @@
 
 
-interface ResponseBody<T> {
+export interface ResponseBody<T> {
     requestID: string;
     signature: {
         name: string;
@@ -22,12 +22,12 @@ interface ResponseBody<T> {
     };
 }
 
-interface RequestBody {
+export interface RequestBody {
     statement: string;
     [x: string]: any;
 };
 
-interface FetchApi {
+export interface FetchApi {
     url: string;
     username: string;
     password: string;
@@ -62,7 +62,7 @@ export class fetchApi {
             headers.set('Authorization', 'Basic ' + btoa(this.username + ":" + this.password));
 
             const fetchRequest = new Request(
-                `${this.url}/${path}`,
+                `${this.url}${path}`,
                 {
                     headers: headers,
                     method: method,
