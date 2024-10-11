@@ -128,7 +128,7 @@ export const upsertBuilder = (
                 : `\`${collection}\``;
 
         return `${expr} ${_collection} (KEY, VALUE) 
-         VALUES ${valuesExpr.map((value) => `('${value.key}', ${stringifyValues(value.value)})`).join(',')}
+         VALUES ${valuesExpr.map((value) => `('${value.key}', ${stringifyValues(value.value)} ${value.options? `, ${stringifyValues(value.options)}` : "" } )`).join(',')}
          RETURNING ${collection}.*;
         `;
     } catch (exception) {

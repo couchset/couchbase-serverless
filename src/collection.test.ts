@@ -27,6 +27,15 @@ describe("Collection", () => {
         expect(JSON.stringify(createdDocument)).to.be.equal(JSON.stringify(valueTest));
     }); 
 
+    it("should upsert a document into collection with expiry", async () => {
+        const expireKey = "expire-key" + keyTest;
+        const createdDocument = await collection.upsert(expireKey, valueTest, { expiry: 10 });
+        
+        console.log("createdDocument expire document", createdDocument);
+
+        expect(JSON.stringify(createdDocument)).to.be.equal(JSON.stringify(valueTest));
+    }); 
+
     it("should get a document from collection", async () => {
         const createdDocument = await collection.get(keyTest, { project: ["*"] });
 

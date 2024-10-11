@@ -250,6 +250,7 @@ export type ISelectType =
 export interface IValuesExpr {
     key: string;
     value: unknown;
+    options?: Record<string, unknown>;
 }
 
 /**

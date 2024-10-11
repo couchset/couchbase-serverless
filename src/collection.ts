@@ -3,6 +3,7 @@ import { fetchApi, ResponseBody } from './api';
 import { Scope } from './scope';
 import { buildSelectArrayExpr, QueryBuilder } from "./query";
 import awaitTo from "./awaitTo";
+import { IValuesExpr } from "./query/interface/query.types";
 
 export class Collection {
 
@@ -50,8 +51,6 @@ export class Collection {
 
         const statement = query.build();
 
-        console.log("statement", statement);
-
         const [result, error] = await awaitTo<ResponseBody<any>>(client.call<ResponseBody<any>>({
             method: 'POST',
             path: `/query/service`,
@@ -76,16 +75,19 @@ export class Collection {
         const scope = this.scope;
         const client = this.getClient();
 
-        // const { project } = options;
-        // TODO timeout, withExpire, 
-        const valueExpr = [{ key, value }];
-        // const valueExpr = Object.keys(value).map((key) => ({ key: key, value: value[key] }));
+        // TODO timeout, other options 
+        const valueItem = { id: key, ...value };
+        const valuesExpr: IValuesExpr = { key, value: valueItem };
+
+        if(options?.expiry) {
+            valuesExpr.options = {expiration: options.expiry };
+        }
+
         const query = new QueryBuilder({}, scope.bucket.name);
-        query.upsert().values(valueExpr);
+        query.upsert().values([valuesExpr]);
 
         const statement = query.build();
 
-        console.log("statement", statement);
 
         const [result, error] = await awaitTo<ResponseBody<any>>(client.call<ResponseBody<any>>({
             method: 'POST',
