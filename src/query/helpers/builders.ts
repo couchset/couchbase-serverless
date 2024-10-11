@@ -21,6 +21,7 @@ import {
     InWithinOperatorExceptions,
     QueryGroupByParamsException,
     QueryOperatorNotFoundException,
+    RemoveClauseException,
     SelectClauseException,
     UpsertClauseException,
     WhereClauseException,
@@ -133,6 +134,36 @@ export const upsertBuilder = (
         `;
     } catch (exception) {
         throw new UpsertClauseException();
+    }
+};
+
+/**
+ * Build a DELETE N1QL with keys query from user-specified parameters.
+ * {@link https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/delete.html#syntax}
+ * @param collection Collection name
+ * @param deleteExpr DELETE FROM Clause param
+ * @param useExpr USE KEYS Clause param
+ *
+ * @return N1QL DELETE with keys Query
+ * */
+export const removeBuilder = (
+    collection: string,
+    deleteExpr: string,
+    useExpr: string[]
+): string => {
+    try {
+        let expr = deleteExpr;
+
+        const _collection =
+            collection.indexOf(' ') !== -1
+                ? `\`${collection}`.replace(' ', '` ')
+                : collection.indexOf('`') !== -1
+                ? collection
+                : `\`${collection}\``;
+
+        return `${expr} ${_collection} ${_buildUseKeysExpr(useExpr)} RETURNING ${collection}.*;`;
+    } catch (exception) {
+        throw new RemoveClauseException();
     }
 };
 

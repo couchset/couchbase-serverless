@@ -1,4 +1,4 @@
-import type { GetOptions, UpsertOptions, ReplaceOptions } from "couchbase"
+import type { GetOptions, UpsertOptions, ReplaceOptions, RemoveOptions } from "couchbase"
 import { fetchApi, ResponseBody } from './api';
 import { Scope } from './scope';
 import { buildSelectArrayExpr, QueryBuilder } from "./query";
@@ -27,9 +27,9 @@ export class Collection {
     getClient() {
         const connStr = this.scope.cluster.__connStr;
         const auth = this.scope.cluster.auth;
-        const hostname  = connStr.includes("//") ? new URL(connStr).hostname : connStr;
+        const hostname = connStr.includes("//") ? new URL(connStr).hostname : connStr;
         const useHttps = hostname.includes("18093");
-        const url = `http${!useHttps ? "" : "s"}://${hostname}${!useHttps ? ":8093" : "" }`;
+        const url = `http${!useHttps ? "" : "s"}://${hostname}${!useHttps ? ":8093" : ""}`;
         const client = new fetchApi({
             url,
             username: auth.username,
@@ -38,14 +38,14 @@ export class Collection {
         return client;
     }
 
-    async get(key: string, options: GetOptions = { project: ["*"]}): Promise<any> {
+    async get(key: string, options: GetOptions = { project: ["*"] }): Promise<any> {
         const scope = this.scope;
         const client = this.getClient();
 
         const { project } = options;
         // TODO timeout, withExpire, 
-        const selectProject = project.map((p) => ({$field: {name: p}}));
-        const select = buildSelectArrayExpr(selectProject); 
+        const selectProject = project.map((p) => ({ $field: { name: p } }));
+        const select = buildSelectArrayExpr(selectProject);
         const query = new QueryBuilder({ select }, scope.bucket.name);
         query.where({ id: key }).limit(1);
 
@@ -63,7 +63,7 @@ export class Collection {
             throw error;
         }
 
-        if(result.errors) {
+        if (result.errors) {
             throw result.errors;
         }
 
@@ -80,8 +80,8 @@ export class Collection {
         const valueItem = { id: key, ...value };
         const valuesExpr: IValuesExpr = { key, value: valueItem };
 
-        if(options?.expiry) {
-            valuesExpr.options = {expiration: options.expiry };
+        if (options?.expiry) {
+            valuesExpr.options = { expiration: options.expiry };
         }
 
         const query = new QueryBuilder({}, scope.bucket.name);
@@ -102,7 +102,7 @@ export class Collection {
             throw error;
         }
 
-        if(result.errors) {
+        if (result.errors) {
             throw result.errors;
         }
 
@@ -114,17 +114,38 @@ export class Collection {
         return this.replace(key, value, options);
     }
 
-    // async remove (key: string, options?: any): Promise<any> {
-    //     return new Promise((resolve, reject) => {
-    //         super.remove(key, options, (err, res) => {
-    //             if (err) {
-    //                 reject(err);
-    //             } else {
-    //                 resolve(res);
-    //             }
-    //         });
-    //     });
-    // }
+    async remove(key: string, options?: RemoveOptions): Promise<any> {
+        const scope = this.scope;
+        const client = this.getClient();
+
+        // TODO timeout, other options 
+        const query = new QueryBuilder({}, scope.bucket.name);
+        query.remove(key);
+
+        const statement = query.build();
+
+        console.log("statement remove", statement);
+
+        const [result, error] = await awaitTo<ResponseBody<any>>(client.call<ResponseBody<any>>({
+            method: 'POST',
+            path: `/query/service`,
+            body: {
+                statement
+            }
+        }));
+
+        if (error) {
+            throw error;
+        }
+
+        if (result.errors) {
+            throw result.errors;
+        }
+
+        console.log("result", result);
+        return result.results[0];
+
+    }
 
 
 }

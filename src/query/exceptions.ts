@@ -12,6 +12,12 @@ export class UpsertClauseException extends Error {
     }
 }
 
+export class RemoveClauseException extends Error {
+    constructor() {
+        super('The DELETE:remove clause does not have the proper structure');
+    }
+}
+
 
 export class WhereClauseException extends Error {
     constructor() {

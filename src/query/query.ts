@@ -6,6 +6,7 @@ import {
     IIndexWithParams,
     ILetExpr,
     IndexType,
+    IRemoveExpr,
     ISelectType,
     IValuesExpr,
     LogicalWhereExpr,
@@ -17,7 +18,7 @@ import {
     MultipleQueryTypesException,
 } from './exceptions';
 import { buildIndexExpr, selectBuilder } from './helpers';
-import { upsertBuilder } from './helpers/builders';
+import { removeBuilder, upsertBuilder } from './helpers/builders';
 
 export class QueryBuilder extends BaseQuery {
     /**
@@ -29,6 +30,16 @@ export class QueryBuilder extends BaseQuery {
      * UPSERT Expression.
      */
     private upsertExpr?: string;
+
+    /**
+     * DELETE:remove Expression.
+     */
+    private removeExpr?: string;
+
+    /**
+     * DELETE Expression.
+     */
+    private deleteExpr?: string;
 
     /**
      * VALUES Expression.
@@ -79,7 +90,7 @@ export class QueryBuilder extends BaseQuery {
     /**
      * Available query types.
      */
-    private queryType?: 'SELECT' | 'INDEX' | 'UPSERT';
+    private queryType?: 'SELECT' | 'INDEX' | 'UPSERT' | 'DELETE';
     /**
      * INDEX ON Expression.
      */
@@ -171,6 +182,29 @@ export class QueryBuilder extends BaseQuery {
             return this;
         }
         throw new MultipleQueryTypesException('UPSERT', this.queryType);
+    }
+
+    /**
+     * Add result selectors to INSERT clause.
+     * @method
+     * @public
+     *
+     * @example
+     * ```ts
+     *   const query = new QueryBuilder({}, 'travel-sample');
+     *   const result = query.remove("id").build()
+     *   console.log(result)
+     * ```
+     * > DELETE FROM `travel-sample` WHERE id = "id"
+     */
+    remove(keys: string[] | string): QueryBuilder {
+        if (this.queryType === undefined || this.queryType === 'DELETE') {
+            this.queryType = 'DELETE';
+            this.removeExpr = 'DELETE FROM';
+            this.useKeys(Array.isArray(keys) ? keys : [keys]);
+            return this;
+        }
+        throw new MultipleQueryTypesException('DELETE:remove', this.queryType);
     }
 
     /**
@@ -520,6 +554,9 @@ export class QueryBuilder extends BaseQuery {
                 case 'values':
                     !!conditionals[value] && this.values(conditionals[value] as IValuesExpr[]);
                     break;
+                case 'remove':
+                    !!conditionals[value] && this.remove(conditionals[value] as IRemoveExpr);
+                    break;
             }
         });
     }
@@ -583,7 +620,15 @@ export class QueryBuilder extends BaseQuery {
                         this.upsertExpr,
                         this.valuesExpr
                     );
-                    // return `UPSERT INTO ${this.collection} ${this.upsertExpr}`;
+                }
+            case 'DELETE':
+                // TODO deleteType
+                if (this.removeExpr) {
+                    return removeBuilder(
+                        this.collection,
+                        this.removeExpr,
+                        this.useKeysExpr
+                    );
                 }
         }
         return '';

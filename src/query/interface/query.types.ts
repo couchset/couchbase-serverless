@@ -253,6 +253,8 @@ export interface IValuesExpr {
     options?: Record<string, unknown>;
 }
 
+export type IRemoveExpr = string | string[];
+
 /**
  * LET expression
  * */
@@ -281,7 +283,9 @@ export interface IConditionExpr {
     letting?: ILetExpr[];
     having?: LogicalWhereExpr;
 
+    // upsert?: IUpsertExpr[]; // TODO: add upsert support
     values?: IValuesExpr[];
+    remove?: IRemoveExpr;
 }
 
 /**
