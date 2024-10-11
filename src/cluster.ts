@@ -54,6 +54,20 @@ export class Collection {
         this.__name = collectionName;
     }
 
+    getClient() {
+        const connStr = this.scope.cluster.__connStr;
+        const auth = this.scope.cluster.auth;
+        const hostname  = connStr.includes("//") ? new URL(connStr).hostname : connStr;
+        const useHttps = hostname.includes("18093");
+        const url = `http${!useHttps ? "" : "s"}://${hostname}${!useHttps ? ":8093" : "" }`;
+        const client = new fetchApi({
+            url,
+            username: auth.username,
+            password: auth.password
+        });
+        return client;
+    }
+
 
 
     async get(key: string, options?: any): Promise<any> {
