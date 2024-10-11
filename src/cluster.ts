@@ -1,4 +1,7 @@
-import type { Bucket as CBBucket, Cluster as CBCluster, Scope as CbScope, Collection as CBCollection, ConnectOptions, MutationResult, NodeCallback, ReplaceOptions } from 'couchbase';
+import type { Bucket as CBBucket, Cluster as CBCluster, Scope as CbScope, Collection as CBCollection, ConnectOptions, MutationResult, NodeCallback, ReplaceOptions, } from 'couchbase';
+import { fetchApi } from './api';
+import awaitTo from './awaitTo';
+import { PoolDetails } from './interfaces/pool-details';
 
 export class Scope {
 
@@ -165,10 +168,27 @@ export class Cluster {
         return this;
     }
 
-    async __connect(): Promise<void> {
-        return new Promise((resolve, reject) => {
-            resolve();
+    getClient() {
+        const hostname  = this.__connStr.includes("//") ? new URL(this.__connStr).hostname : this.__connStr;
+        const url = `http://${hostname}:8091`;
+        const client = new fetchApi({
+            url,
+            username: this.auth.username,
+            password: this.auth.password
         });
+        return client;
+    }
+
+    async __connect(): Promise<PoolDetails> {
+        const client = this.getClient();
+        const [clusterStatus, error] = await awaitTo<PoolDetails>(client.call<PoolDetails>({
+            method: 'GET',
+            path: '/pools/default'
+        }));
+        if (error) {
+            throw error;
+        }
+        return clusterStatus;
     }
 
     static connect(connStr: string, options?: ConnectOptions, callback?: NodeCallback<Cluster>): Promise<Cluster> {
@@ -194,17 +214,17 @@ export class Cluster {
 }
 
 
-// (async () => {
-// // test
-// const cluster = await Cluster.connect('couchbase://localhost', {
-//     password: "some password",
-//     username: "some username"
-// });
+(async () => {
+// test
+const cluster = await Cluster.connect('couchbase://localhost', {
+    password: "1234567",
+    username: "admin"
+});
 
 // const bucket = cluster.bucket('default');
 // const collection = bucket.defaultCollection();
 
 // const result = await collection.get('test-key');
 
-// })()
+})()
 
