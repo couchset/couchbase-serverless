@@ -1,4 +1,4 @@
-import type { GetOptions, UpsertOptions } from "couchbase"
+import type { GetOptions, UpsertOptions, ReplaceOptions } from "couchbase"
 import { fetchApi, ResponseBody } from './api';
 import { Scope } from './scope';
 import { buildSelectArrayExpr, QueryBuilder } from "./query";
@@ -67,6 +67,7 @@ export class Collection {
             throw result.errors;
         }
 
+        console.log("result", result);
         return result.results[0];
     }
 
@@ -105,20 +106,13 @@ export class Collection {
             throw result.errors;
         }
 
+        console.log("result", result);
         return result.results[0];
     }
 
-    // async replace(key: string, value: any, options?: ReplaceOptions, callback?: NodeCallback<MutationResult>): Promise<MutationResult> {
-    //     return new Promise((resolve, reject) => {
-    //         super.replace(key, value, options, (err, res) => {
-    //             if (err) {
-    //                 reject(err);
-    //             } else {
-    //                 resolve(res);
-    //             }
-    //         });
-    //     });
-    // }
+    async replace(key: string, value: any, options?: ReplaceOptions): Promise<any> {
+        return this.replace(key, value, options);
+    }
 
     // async remove (key: string, options?: any): Promise<any> {
     //     return new Promise((resolve, reject) => {
