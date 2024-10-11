@@ -1,4 +1,4 @@
-import { Bucket as CBBucket, Cluster as CBCluster, Scope as CbScope, Collection as CBCollection, ConnectOptions, MutationResult, NodeCallback, ReplaceOptions } from 'couchbase';
+import type { Bucket as CBBucket, Cluster as CBCluster, Scope as CbScope, Collection as CBCollection, ConnectOptions, MutationResult, NodeCallback, ReplaceOptions } from 'couchbase';
 
 export class Scope {
 
@@ -138,7 +138,7 @@ export class Bucket {
 
 };
 
-export default class Cluster {
+export class Cluster {
     __connStr: string;
 
     __auth: {
@@ -194,17 +194,17 @@ export default class Cluster {
 }
 
 
-(async () => {
-// test
-const cluster = await Cluster.connect('couchbase://localhost', {
-    password: "some password",
-    username: "some username"
-});
+// (async () => {
+// // test
+// const cluster = await Cluster.connect('couchbase://localhost', {
+//     password: "some password",
+//     username: "some username"
+// });
 
-const bucket = cluster.bucket('default');
-const collection = bucket.defaultCollection();
+// const bucket = cluster.bucket('default');
+// const collection = bucket.defaultCollection();
 
-const result = await collection.get('test-key');
+// const result = await collection.get('test-key');
 
-})()
+// })()
 
