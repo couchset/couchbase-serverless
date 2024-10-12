@@ -161,7 +161,7 @@ export const removeBuilder = (
                 ? collection
                 : `\`${collection}\``;
 
-        return `${expr} ${_collection} ${_buildUseKeysExpr(useExpr)} RETURNING ${collection}.*;`;
+        return `${expr} ${_collection} ${_buildUseKeysExpr(useExpr)} RETURNING ${collection}.*, meta().cas;`;
     } catch (exception) {
         throw new RemoveClauseException();
     }

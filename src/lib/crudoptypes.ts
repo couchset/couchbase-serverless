@@ -141,11 +141,19 @@ export class MutationResult {
   token?: MutationToken
 
   /**
+  * @new
+  * The updated content for the document.
+  * 
+  */
+  content: any
+
+  /**
    * @internal
    */
   constructor(data: MutationResult) {
     this.cas = data.cas
     this.token = data.token
+    this.content = data.content
   }
 }
 

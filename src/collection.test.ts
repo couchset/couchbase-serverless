@@ -21,13 +21,15 @@ describe("Collection", () => {
         collection = cluster.bucket(bucketName).defaultCollection();
     });
 
-    // it("should upsert a document into collection", async () => {
-    //     const createdDocument = await collection.upsert(keyTest, valueTest);
+    it("should upsert a document into collection", async () => {
+        const createdDocument = await collection.upsert(keyTest, valueTest);
 
-    //     console.log("createdDocument", createdDocument);
+        console.log("createdDocument", createdDocument);
 
-    //     expect(JSON.stringify(createdDocument)).to.be.equal(JSON.stringify(valueTest));
-    // });
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        expect(JSON.stringify(createdDocument.content)).to.be.equal(JSON.stringify(valueTest));
+    });
 
     it("should get a document from collection", async () => {
         const createdDocument = await collection.get(keyTest, { project: ["*"] });
@@ -41,20 +43,20 @@ describe("Collection", () => {
         expect(JSON.stringify(createdDocument.content)).to.be.equal(JSON.stringify(valueTest));
     });
 
-    // it("should upsert a document into collection with expiry", async () => {
+    it("should upsert a document into collection with expiry", async () => {
        
-    //     const createdDocument = await collection.upsert(expireKey, valueTestExpire, { expiry: 10 });
+        const createdDocument = await collection.upsert(expireKey, valueTestExpire, { expiry: 10 });
 
-    //     console.log("createdDocument expire document", createdDocument);
+        console.log("createdDocument expire document", createdDocument);
 
-    //     expect(JSON.stringify(createdDocument)).to.be.equal(JSON.stringify(valueTestExpire));
-    // });
+        expect(JSON.stringify(createdDocument.content)).to.be.equal(JSON.stringify(valueTestExpire));
+    });
 
-    // it("should remove a document from collection", async () => {
-    //     const removedDocument = await collection.remove(expireKey);
-
-    //     expect(JSON.stringify(removedDocument)).to.be.equal(JSON.stringify(valueTestExpire));
-    // });
+    it("should remove a document from collection", async () => {
+        const removedDocument = await collection.remove([expireKey, keyTest]);
+        console.log("removedDocument", removedDocument);
+        expect(JSON.stringify(removedDocument.content)).to.be.equal(JSON.stringify(valueTestExpire));
+    });
 
 
 

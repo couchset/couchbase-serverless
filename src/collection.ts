@@ -4,7 +4,7 @@ import { Scope } from './scope';
 import { buildSelectArrayExpr, QueryBuilder } from "./query";
 import awaitTo from "./awaitTo";
 import { IValuesExpr } from "./query/interface/query.types";
-import { GetResult } from "./lib/crudoptypes";
+import { GetResult, MutationResult } from "./lib/crudoptypes";
 
 export class Collection {
 
@@ -99,7 +99,7 @@ export class Collection {
         return response;
     }
 
-    async upsert(key: string, value: any, options?: UpsertOptions): Promise<any> {
+    async upsert(key: string, value: any, options?: UpsertOptions, callback?: NodeCallback<MutationResult>): Promise<MutationResult> {
 
         const scope = this.scope;
         const client = this.getClient();
@@ -117,7 +117,6 @@ export class Collection {
 
         const statement = query.build();
 
-
         const [result, error] = await awaitTo<ResponseBody<any>>(client.call<ResponseBody<any>>({
             method: 'POST',
             path: `/query/service`,
@@ -127,22 +126,42 @@ export class Collection {
         }));
 
         if (error) {
-            throw error;
+            if (callback) {
+                callback(error, null);
+            } else {
+                throw error;
+            }
         }
 
         if (result.errors) {
-            throw result.errors;
+            if (callback) {
+                const error = new Error(result.errors[0].code + " " +result.errors[0].msg , )
+                callback(error, null);
+            } else {
+                throw result.errors;
+            }
         }
 
-        console.log("result", result);
-        return result.results[0];
+        const content = result.results[0];
+
+        // TODO content by project fields
+        const {cas, expiration, ...restOfContent} = content;
+        const response = new MutationResult({
+            cas: cas,
+            content: restOfContent,
+        });
+
+        if(callback) {
+            callback(null, response);
+        }
+        return response;
     }
 
-    async replace(key: string, value: any, options?: ReplaceOptions): Promise<any> {
-        return this.replace(key, value, options);
+    async replace(key: string, value: any, options?: ReplaceOptions, callback?: NodeCallback<MutationResult>): Promise<MutationResult> {
+        return this.replace(key, value, options, callback);
     }
 
-    async remove(key: string, options?: RemoveOptions): Promise<any> {
+    async remove(key: string | string[], options?: RemoveOptions, callback?: NodeCallback<MutationResult>): Promise<MutationResult> {
         const scope = this.scope;
         const client = this.getClient();
 
@@ -152,8 +171,6 @@ export class Collection {
 
         const statement = query.build();
 
-        console.log("statement remove", statement);
-
         const [result, error] = await awaitTo<ResponseBody<any>>(client.call<ResponseBody<any>>({
             method: 'POST',
             path: `/query/service`,
@@ -163,15 +180,35 @@ export class Collection {
         }));
 
         if (error) {
-            throw error;
+            if (callback) {
+                callback(error, null);
+            } else {
+                throw error;
+            }
         }
 
         if (result.errors) {
-            throw result.errors;
+            if (callback) {
+                const error = new Error(result.errors[0].code + " " +result.errors[0].msg , )
+                callback(error, null);
+            } else {
+                throw result.errors;
+            }
         }
 
-        console.log("result", result);
-        return result.results[0];
+        const content = result.results[0];
+
+        // TODO content by project fields
+        const {cas, expiration, ...restOfContent} = content;
+        const response = new MutationResult({
+            cas: cas,
+            content: restOfContent,
+        });
+
+        if(callback) {
+            callback(null, response);
+        }
+        return response;
 
     }
 
