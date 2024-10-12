@@ -1,9 +1,10 @@
-import type { GetOptions, UpsertOptions, ReplaceOptions, RemoveOptions } from "couchbase"
+import type { GetOptions, UpsertOptions, ReplaceOptions, RemoveOptions, NodeCallback } from "couchbase"
 import { fetchApi, ResponseBody } from './api';
 import { Scope } from './scope';
 import { buildSelectArrayExpr, QueryBuilder } from "./query";
 import awaitTo from "./awaitTo";
 import { IValuesExpr } from "./query/interface/query.types";
+import { GetResult } from "./lib/crudoptypes";
 
 export class Collection {
 
@@ -38,13 +39,19 @@ export class Collection {
         return client;
     }
 
-    async get(key: string, options: GetOptions = { project: ["*"] }): Promise<any> {
+    async get(key: string, options: GetOptions = { project: ["*"] }, callback?: NodeCallback<GetResult>): Promise<GetResult> {
         const scope = this.scope;
         const client = this.getClient();
 
         const { project } = options;
-        // TODO timeout, withExpire, 
+
+        // const hasSelectAll = project.includes("*");
+        // TODO timeout,
         const selectProject = project.map((p) => ({ $field: { name: p } }));
+        if(options.withExpiry){
+            selectProject.push({$field: {name: "meta().expiration"}});
+        };
+        selectProject.push({$field: {name: "meta().cas"}});
         const select = buildSelectArrayExpr(selectProject);
         const query = new QueryBuilder({ select }, scope.bucket.name);
         query.where({ id: key }).limit(1);
@@ -60,15 +67,36 @@ export class Collection {
         }));
 
         if (error) {
-            throw error;
+            if (callback) {
+                callback(error, null);
+            } else {
+                throw error;
+            }
         }
 
         if (result.errors) {
-            throw result.errors;
+            if (callback) {
+                const error = new Error(result.errors[0].code + " " +result.errors[0].msg , )
+                callback(error, null);
+            } else {
+                throw result.errors;
+            }
         }
 
-        console.log("result", result);
-        return result.results[0];
+        const content = result.results[0]; //hasSelectAll? result.results[0] : result.results[0][scope.bucket.name];
+
+        // TODO content by project fields
+        const {cas, expiration, ...restOfContent} = content;
+        const response = new GetResult({
+            cas: cas,
+            content: restOfContent,
+            expiryTime: expiration,
+        });
+
+        if(callback) {
+            callback(null, response);
+        }
+        return response;
     }
 
     async upsert(key: string, value: any, options?: UpsertOptions): Promise<any> {
