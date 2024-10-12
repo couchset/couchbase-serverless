@@ -34,11 +34,11 @@ describe("Collection", () => {
     it("should get a document from collection", async () => {
         const createdDocument = await collection.get(keyTest, { project: ["*"] });
 
-        expect(JSON.stringify(createdDocument.content[bucketName])).to.be.equal(JSON.stringify(valueTest));
+        expect(JSON.stringify(createdDocument.content)).to.be.equal(JSON.stringify(valueTest));
     });
 
     it("should get a document from collection with projected keys", async () => {
-        const createdDocument = await collection.get(keyTest, { project: ["description", "id", "name"] });
+        const createdDocument = await collection.get(keyTest, { project: ["description", "id", "name", "*"] });
 
         expect(JSON.stringify(createdDocument.content)).to.be.equal(JSON.stringify(valueTest));
     });

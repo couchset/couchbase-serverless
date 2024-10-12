@@ -13,7 +13,9 @@
   ],
   "scripts": {
     "build": "rm -rf dist && tsc --skipLibCheck",
-    "test": "mocha src/*test.ts --exit"
+    "test": "mocha src/*test.ts --exit",
+    "cluster": "mocha src/cluster.test.ts --exit",
+    "col": "mocha src/collection.test.ts --exit"
   },
   "repository": {
     "type": "git",

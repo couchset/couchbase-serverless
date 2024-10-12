@@ -24,19 +24,8 @@ export class Collection {
         this.__scope = scope;
         this.__name = collectionName;
     }
-
     getClient() {
-        const connStr = this.scope.cluster.__connStr;
-        const auth = this.scope.cluster.auth;
-        const hostname = connStr.includes("//") ? new URL(connStr).hostname : connStr;
-        const useHttps = hostname.includes("18093");
-        const url = `http${!useHttps ? "" : "s"}://${hostname}${!useHttps ? ":8093" : ""}`;
-        const client = new fetchApi({
-            url,
-            username: auth.username,
-            password: auth.password
-        });
-        return client;
+        return this.scope.cluster.getSearchClient();
     }
 
     async get(key: string, options: GetOptions = { project: ["*"] }, callback?: NodeCallback<GetResult>): Promise<GetResult> {
@@ -83,10 +72,11 @@ export class Collection {
             }
         }
 
-        const content = result.results[0]; //hasSelectAll? result.results[0] : result.results[0][scope.bucket.name];
+        const results = result.results && result.results[0];
+        const content = results && results[scope.bucket.name]? results[scope.bucket.name] : results; //hasSelectAll? result.results[0] : result.results[0][scope.bucket.name];
 
         // TODO content by project fields
-        const {cas, expiration, ...restOfContent} = content;
+        const {cas, expiration, ...restOfContent} = content || {};
         const response = new GetResult({
             cas: cas,
             content: restOfContent,
@@ -158,7 +148,7 @@ export class Collection {
     }
 
     async replace(key: string, value: any, options?: ReplaceOptions, callback?: NodeCallback<MutationResult>): Promise<MutationResult> {
-        return this.replace(key, value, options, callback);
+        return this.upsert(key, value, options, callback);
     }
 
     async remove(key: string | string[], options?: RemoveOptions, callback?: NodeCallback<MutationResult>): Promise<MutationResult> {

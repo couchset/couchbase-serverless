@@ -1,7 +1,8 @@
 import type { ConnectOptions, NodeCallback, } from 'couchbase';
-import { fetchApi } from './api';
+import { fetchApi, ResponseBody } from './api';
 import awaitTo from './awaitTo';
 import { PoolDetails } from './interfaces/pool-details';
+import {QueryOptions, QueryResult } from './lib/querytypes';
 import { Bucket } from './bucket';
 
 export class Cluster {
@@ -31,7 +32,21 @@ export class Cluster {
         return this;
     }
 
-    getClient() {
+    getSearchClient() {
+        const connStr = this.__connStr;
+        const auth = this.auth;
+        const hostname = connStr.includes("//") ? new URL(connStr).hostname : connStr;
+        const useHttps = hostname.includes("18093");
+        const url = `http${!useHttps ? "" : "s"}://${hostname}${!useHttps ? ":8093" : ""}`;
+        const client = new fetchApi({
+            url,
+            username: auth.username,
+            password: auth.password
+        });
+        return client;
+    }
+
+    getServerClient() {
         const hostname  = this.__connStr.includes("//") ? new URL(this.__connStr).hostname : this.__connStr;
         const url = `http://${hostname}:8091`;
         const client = new fetchApi({
@@ -43,7 +58,7 @@ export class Cluster {
     }
 
     async __connect(): Promise<PoolDetails> {
-        const client = this.getClient();
+        const client = this.getServerClient();
         const [clusterStatus, error] = await awaitTo<PoolDetails>(client.call<PoolDetails>({
             method: 'GET',
             path: '/pools/default'
@@ -73,6 +88,51 @@ export class Cluster {
 
     bucket(bucketName: string): Bucket {
         return new Bucket(this, bucketName);
+    }
+
+    async query<TRow = any>(statement: string, options?: QueryOptions, callback?: NodeCallback<QueryResult<TRow>>): Promise<QueryResult<TRow>> {
+        // return null as any;
+        const client = this.getSearchClient();
+
+        const [result, error] = await awaitTo<ResponseBody<any>>(client.call<ResponseBody<any>>({
+            method: 'POST',
+            path: `/query/service`,
+            body: {
+                statement
+            }
+        }));
+
+        if (error) {
+            if (callback) {
+                callback(error, null);
+            } else {
+                throw error;
+            }
+        }
+
+        if (result.errors) {
+            if (callback) {
+                const error = new Error(result.errors[0].code + " " +result.errors[0].msg , )
+                callback(error, null);
+            } else {
+                throw result.errors;
+            }
+        }
+
+        const {results, ...restOfMeta} = result;
+        const response = new QueryResult<TRow>({
+            rows: results,
+            meta: {
+                ...restOfMeta, 
+                requestId: result.requestID,
+                metrics: result.metrics as any,
+             },
+        });
+
+        if(callback) {
+            callback(null, response);
+        }
+        return response;
     }
 }
 

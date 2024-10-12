@@ -1,6 +1,11 @@
 
 
 export interface ResponseBody<T> {
+    // TODO
+    clientContextId: any;
+     // TODO
+    warnings: any;
+
     requestID: string;
     signature: {
         name: string;
@@ -9,7 +14,7 @@ export interface ResponseBody<T> {
 
     errors?: Array<{ code: number; msg: string; retry?: boolean }>;
 
-    status: string;
+    status: any;
     metrics: {
         elapsedTime: string;
         executionTime: string;
