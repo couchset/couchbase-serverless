@@ -2,7 +2,7 @@ import type { ConnectOptions, NodeCallback, } from 'couchbase';
 import { fetchApi, ResponseBody } from './api';
 import awaitTo from './awaitTo';
 import { PoolDetails } from './interfaces/pool-details';
-import {QueryOptions, QueryResult } from './lib/querytypes';
+import { QueryOptions, QueryResult } from './lib/querytypes';
 import { Bucket } from './bucket';
 
 export class Cluster {
@@ -12,9 +12,9 @@ export class Cluster {
         username: string;
         password: string;
     } = {
-        username: '',
-        password: '',
-    };
+            username: '',
+            password: '',
+        };
 
     get auth() {
         return this.__auth;
@@ -36,8 +36,8 @@ export class Cluster {
         const connStr = this.__connStr;
         const auth = this.auth;
         const hostname = connStr.includes("//") ? new URL(connStr).hostname : connStr;
-        const useHttps = hostname.includes("18093");
-        const url = `http${!useHttps ? "" : "s"}://${hostname}${!useHttps ? ":8093" : ""}`;
+        const useHttps = connStr.includes("18093") || connStr.includes("couchbases");
+        const url = `http${!useHttps ? "" : "s"}://${hostname}${!useHttps ? ":8093" : ":18093"}`;
         const client = new fetchApi({
             url,
             username: auth.username,
@@ -47,8 +47,11 @@ export class Cluster {
     }
 
     getServerClient() {
-        const hostname  = this.__connStr.includes("//") ? new URL(this.__connStr).hostname : this.__connStr;
-        const url = `http://${hostname}:8091`;
+        const connStr = this.__connStr;
+        const hostname = connStr.includes("//") ? new URL(connStr).hostname : connStr;
+        const useHttps = connStr.includes("18093") || connStr.includes("couchbases");
+        // TODO 18092 is hardcoded
+        const url = `http${!useHttps ? "" : "s"}://${hostname}${!useHttps ? ":8091" : ":18092"}`;
         const client = new fetchApi({
             url,
             username: this.auth.username,
@@ -112,24 +115,24 @@ export class Cluster {
 
         if (result.errors) {
             if (callback) {
-                const error = new Error(result.errors[0].code + " " +result.errors[0].msg , )
+                const error = new Error(result.errors[0].code + " " + result.errors[0].msg,)
                 callback(error, null);
             } else {
                 throw result.errors;
             }
         }
 
-        const {results, ...restOfMeta} = result;
+        const { results, ...restOfMeta } = result;
         const response = new QueryResult<TRow>({
             rows: results,
             meta: {
-                ...restOfMeta, 
+                ...restOfMeta,
                 requestId: result.requestID,
                 metrics: result.metrics as any,
-             },
+            },
         });
 
-        if(callback) {
+        if (callback) {
             callback(null, response);
         }
         return response;

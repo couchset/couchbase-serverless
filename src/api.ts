@@ -1,9 +1,9 @@
-
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 export interface ResponseBody<T> {
     // TODO
     clientContextId: any;
-     // TODO
+    // TODO
     warnings: any;
 
     requestID: string;
@@ -75,7 +75,7 @@ export class fetchApi {
                 }
             );
 
-            
+
             const api = await fetch(fetchRequest);
 
             if (api.status === 200) {
